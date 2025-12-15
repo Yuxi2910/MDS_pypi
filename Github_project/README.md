@@ -79,7 +79,7 @@ plt.show()
 
 - Clone and install locally:
   ```bash
-  git clone https://github.com/<Yuxi2910>/airqual-data-fetcher.git
+  git clone https://github.com/QMSS-G5072-2025/Xiao_Yuxi/airqual-data-fetcher.git
   cd airqual-data-fetcher
   pip install -e .
 
