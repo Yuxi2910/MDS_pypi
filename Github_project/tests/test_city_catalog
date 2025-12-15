@@ -1,0 +1,72 @@
+import unittest
+import pandas as pd
+
+from airqual_data_fetcher.city_catalog import add_city_label, select_top_cities, to_city_coord_dict
+
+
+class TestCityCatalogFromWorldcities(unittest.TestCase):
+    """
+    Tests functions that REQUIRE coordinates.
+    These should use a worldcities-like dataframe (with lat/lng).
+    """
+    def setUp(self):
+        self.worldcities = pd.DataFrame({
+            "city_ascii": ["Tokyo", "Delhi", "Mumbai"],
+            "city": ["Tokyo", "Delhi", "Mumbai"],  
+            "country": ["Japan", "India", "India"],
+            "lat": [35.6762, 28.6139, 19.0760],
+            "lng": [139.6503, 77.2090, 72.8777],
+            "population": [37785000, 32226000, 24973000],
+            "capital": ["primary", "admin", "admin"],
+        })
+
+        self.worldcities = add_city_label(
+            self.worldcities,
+            city_col="city_ascii",
+            country_col="country",
+            out_col="city_label",
+        )
+
+    def test_add_city_label(self):
+        self.assertIn("Tokyo, Japan", self.worldcities["city_label"].tolist())
+        self.assertIn("Delhi, India", self.worldcities["city_label"].tolist())
+
+    def test_to_city_coord_dict(self):
+        d = to_city_coord_dict(
+            self.worldcities,
+            city_col="city_label",
+            lat_col="lat",
+            lon_col="lng",
+        )
+        self.assertIn("Delhi, India", d)
+        self.assertAlmostEqual(d["Delhi, India"][0], 28.6139, places=2)
+        self.assertAlmostEqual(d["Delhi, India"][1], 77.2090, places=2)
+
+
+class TestCityCatalogReduced(unittest.TestCase):
+    """
+    Tests functions that operate on your FINAL city_catalog.csv (4 columns).
+    """
+    def setUp(self):
+        self.city_catalog = pd.DataFrame({
+            "city": ["Tokyo, Japan", "Delhi, India", "Mumbai, India"],
+            "admin_name": ["Tokyo", "Delhi", "Maharashtra"],
+            "capital": ["primary", "admin", "admin"],
+            "population": [37785000, 32226000, 24973000],
+        })
+
+    def test_select_top_cities(self):
+        out = select_top_cities(
+            self.city_catalog,
+            n=2,
+            min_population=25_000_000,
+            city_col="city",
+            population_col="population",
+        )
+        self.assertEqual(len(out), 2)
+        # should be sorted by population desc
+        self.assertEqual(out.iloc[0]["city"], "Tokyo, Japan")
+
+
+if __name__ == "__main__":
+    unittest.main()
